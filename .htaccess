@@ -1,0 +1,16 @@
+# RewriteEngine On
+
+# Serve JSON (index.php) for URLs containing /website/api/v1/, /portal/api/v1/, and /pdf/api/v1/
+# RewriteCond %{REQUEST_URI} ^/(website|portal|pdf)/api/v1/
+# RewriteRule ^ index.php [L]
+
+# Serve React content (index.html) for other non-existent files or directories
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteRule ^ index.html [L]
+
+
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L]
