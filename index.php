@@ -6,12 +6,10 @@ $endpoint = implode('/', array_slice($uri_parts, 2));
 
 include 'api.php';
 
-
 // GET 
 if (strpos($endpoint, 'api/nearest_hospitals') !== false) {
   if ($_SERVER['REQUEST_METHOD'] === 'GET') {
       $parts = explode('/', $endpoint);
-      echo $parts;
       if (count($parts) == 5) {
         $latitude = $parts[3];
         $longitude = $parts[4];
@@ -26,47 +24,59 @@ if (strpos($endpoint, 'api/nearest_hospitals') !== false) {
   }
 }
 
-// Login
-if (strpos($endpoint, 'api/login') !== false) {
+// Login endpoint
+if ($endpoint === 'api/login') {
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $data = json_decode(file_get_contents('php://input'), false);
-      $email = filter_var($data['email'], FILTER_VALIDATE_EMAIL);
-      $password = $data['password'];
+    // Retrieve username and password from request body
+    $data = json_decode(file_get_contents('php://input'), true);
+    $username = $data['username'];
+    $password = $data['password'];
 
-      if (!$email || empty($password)) {
-          // Invalid input
-          http_response_code(400);
-          echo json_encode(['error' => 'Invalid email or password']);
+    // Validate username and password (you should hash the password before comparing)
+    if ($username && $password) {
+      // Assuming your login function returns true or false
+      if (login($username, $password)) {
+        echo json_encode(['message' => 'Login successful']);
       } else {
-          // Your authentication logic goes here
-          // This is a basic example, and you should replace it with your actual authentication mechanism
-          $sql = "SELECT * FROM user_credential WHERE email = :email";
-          $stmt = $pdo->prepare($sql);
-          $stmt->bindParam(':email', $email);
-          $stmt->execute();
-
-          // Fetch the user data
-          $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-          // Check if the user exists and the password is correct
-          if ($user && password_verify($password, $user['password'])) {
-              // Successful login
-              http_response_code(200);
-              echo json_encode(['message' => 'Login successful']);
-          } else {
-              // Failed login
-              http_response_code(401);
-              echo json_encode(['error' => 'Invalid credentials']);
-          }
+        http_response_code(401); // Unauthorized
+        echo json_encode(['error' => 'Invalid username or password']);
       }
+    } else {
+      http_response_code(400); // Bad request
+      echo json_encode(['error' => 'Missing username or password']);
+    }
   } else {
-      // Invalid request method
-      http_response_code(405);
-      echo json_encode(['error' => 'Invalid request method for this endpoint']);
+    http_response_code(405); // Method Not Allowed
+    echo json_encode(['error' => 'Invalid request method for this endpoint']);
   }
 }
 
+// Register endpoint
+if ($endpoint === 'api/register') {
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Retrieve username and password from request body
+    $data = json_decode(file_get_contents('php://input'), true);
+    $username = $data['username'];
+    $password = $data['password'];
 
-
+    // Validate username and password
+    if ($username && $password) {
+      // Attempt registration
+      $registration_result = register($username, $password);
+      if ($registration_result) {
+        echo json_encode(['message' => 'Registration successful']);
+      } else {
+        http_response_code(500); // Internal Server Error
+        echo json_encode(['error' => 'Registration failed']);
+      }
+    } else {
+      http_response_code(400); // Bad request
+      echo json_encode(['error' => 'Missing username or password']);
+    }
+  } else {
+    http_response_code(405); // Method Not Allowed
+    echo json_encode(['error' => 'Invalid request method for this endpoint']);
+  }
+}
 
 ?>
